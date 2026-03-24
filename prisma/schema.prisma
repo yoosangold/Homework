@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 枚举类型 ====================
+
+enum Role {
+  ADMIN
+  HEAD_TEACHER
+  TEACHER
+  PARENT
+  STUDENT
+}
+
+enum Subject {
+  MATH
+  CHINESE
+  ENGLISH
+}
+
+// ==================== 模型定义 ====================
+
+/// 用户表
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联
+  classStudents      ClassStudent[]
+  classTeachers      ClassTeacher[]
+  assignments        Assignment[]       @relation("TeacherAssignments")
+  correctionsStudent Correction[]       @relation("CorrectionStudent")
+  correctionsReviewer Correction[]      @relation("CorrectionReviewer")
+  wrongQuestions     WrongQuestion[]
+
+  @@index([email])
+  @@index([role])
+}
+
+/// 班级表
+model Class {
+  id          String   @id @default(cuid())
+  name        String   @unique // 如："2024 级 1 班"
+  grade       Int      // 年级，如：1, 2, 3...
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联
+  classStudents ClassStudent[]
+  classTeachers ClassTeacher[]
+
+  @@index([grade])
+}
+
+/// 班级 - 学生关联表（支持调班）
+model ClassStudent {
+  id        String   @id @default(cuid())
+  userId    String
+  classId   String
+  enrolledAt DateTime @default(now()) // 入学时间
+  isActive  Boolean  @default(true)   // 是否当前在班（支持调班历史）
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classId])
+  @@index([userId])
+  @@index([classId])
+}
+
+/// 班级 - 老师关联表
+model ClassTeacher {
+  id        String   @id @default(cuid())
+  userId    String
+  classId   String
+  role      String   @default("TEACHER") // 班主任、任课老师等
+  assignedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classId])
+  @@index([userId])
+  @@index([classId])
+}
+
+/// 作业表
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  subject     Subject
+  teacherId   String
+  classId     String?  // 可选，如果是全校作业则为空
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher     User         @relation("TeacherAssignments", fields: [teacherId], references: [id])
+  corrections Correction[]
+
+  @@index([teacherId])
+  @@index([subject])
+  @@index([dueDate])
+}
+
+/// 批改记录表
+model Correction {
+  id            String   @id @default(cuid())
+  assignmentId  String
+  studentId     String
+  status        String   @default("PENDING") // PENDING, CORRECTED, REVIEWED
+  score         Int?     // 分数
+  feedback      String?  // 评语
+  correctedAt   DateTime?
+  reviewedAt    DateTime?
+  reviewerId    String?  // 复核老师 ID
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student       User       @relation("CorrectionStudent", fields: [studentId], references: [id])
+  reviewer      User?      @relation("CorrectionReviewer", fields: [reviewerId], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([status])
+}
+
+/// 知识点表（树形结构）
+model KnowledgePoint {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique // 知识点编码，如："MATH-001"
+  subject     Subject
+  parentId    String?  // 父知识点 ID，用于树形结构
+  depth       Int      @default(0) // 深度
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent      KnowledgePoint?  @relation("KnowledgePointHierarchy", fields: [parentId], references: [id])
+  children    KnowledgePoint[] @relation("KnowledgePointHierarchy")
+  wrongQuestions WrongQuestion[]
+
+  @@index([subject])
+  @@index([parentId])
+  @@index([code])
+}
+
+/// 错题表
+model WrongQuestion {
+  id              String   @id @default(cuid())
+  studentId       String
+  knowledgePointId String
+  questionContent String   // 题目内容
+  studentAnswer   String?  // 学生答案
+  correctAnswer   String   // 正确答案
+  errorType       String?  // 错误类型
+  notes           String?  // 备注
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  student        User           @relation(fields: [studentId], references: [id])
+  knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id])
+
+  @@index([studentId])
+  @@index([knowledgePointId])
+}
