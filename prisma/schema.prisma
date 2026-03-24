@@ -185,7 +185,30 @@ model WrongQuestion {
 
   student        User           @relation(fields: [studentId], references: [id])
   knowledgePoint KnowledgePoint @relation(fields: [knowledgePointId], references: [id])
+  reviewPlans    ReviewPlan[]
 
   @@index([studentId])
   @@index([knowledgePointId])
+}
+
+/// 复习计划表（基于艾宾浩斯记忆曲线）
+model ReviewPlan {
+  id              String   @id @default(cuid())
+  wrongQuestionId String
+  studentId       String
+  reviewCount     Int      @default(0) // 已复习次数
+  lastReviewedAt  DateTime? // 上次复习时间
+  nextReviewAt    DateTime? // 下次复习时间
+  isCompleted     Boolean  @default(false) // 今日复习是否已完成
+  completedAt     DateTime? // 完成时间
+  masteryLevel    Int      @default(0) // 掌握程度 0-100
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  wrongQuestion   WrongQuestion @relation(fields: [wrongQuestionId], references: [id], onDelete: Cascade)
+
+  @@index([wrongQuestionId])
+  @@index([studentId])
+  @@index([nextReviewAt])
+  @@index([isCompleted])
 }
