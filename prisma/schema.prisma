@@ -32,6 +32,7 @@ enum Subject {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  phone     String   @unique
   name      String
   password  String
   role      Role     @default(STUDENT)
