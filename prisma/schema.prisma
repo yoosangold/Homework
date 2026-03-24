@@ -107,6 +107,11 @@ model Assignment {
   teacherId   String
   classId     String?  // 可选，如果是全校作业则为空
   dueDate     DateTime
+  images      String?  // JSON 数组，存储图片 URL ["url1", "url2"]
+  studentName String?  // 提交作业的学生姓名
+  studentId   String?  // 提交作业的学生 ID
+  instruction String?  // 作业说明/备注
+  status      String   @default("PENDING") // PENDING, CORRECTED, ARCHIVED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -116,6 +121,7 @@ model Assignment {
   @@index([teacherId])
   @@index([subject])
   @@index([dueDate])
+  @@index([status])
 }
 
 /// 批改记录表

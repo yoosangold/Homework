@@ -91,6 +91,11 @@ export interface Assignment {
   teacherId: string
   classId?: string | null
   dueDate: Date
+  images?: string | null // JSON 数组，存储图片 URL
+  studentName?: string | null
+  studentId?: string | null
+  instruction?: string | null
+  status: string // PENDING, CORRECTED, ARCHIVED
   createdAt: Date
   updatedAt: Date
 }
@@ -102,6 +107,10 @@ export interface CreateAssignmentInput {
   teacherId: string
   classId?: string
   dueDate: Date
+  images?: string[]
+  studentName: string
+  studentId?: string
+  instruction?: string
 }
 
 export interface UpdateAssignmentInput {
@@ -109,6 +118,9 @@ export interface UpdateAssignmentInput {
   description?: string
   subject?: Subject
   dueDate?: Date
+  images?: string[]
+  instruction?: string
+  status?: string
 }
 
 // ==================== 批改相关类型 ====================
