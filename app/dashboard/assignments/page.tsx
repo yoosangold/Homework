@@ -46,15 +46,13 @@ export default function AssignmentsPage() {
         // 从所有班级中提取学生
         const allStudents: Student[] = [];
         data.classes.forEach((cls: any) => {
-          if (cls.classStudents) {
-            cls.classStudents.forEach((cs: any) => {
-              if (cs.isActive && cs.studentName) {
-                allStudents.push({
-                  id: cs.id,
-                  name: cs.studentName,
-                  phone: cs.studentPhone || '',
-                });
-              }
+          if (cls.students) {
+            cls.students.forEach((student: any) => {
+              allStudents.push({
+                id: student.id,
+                name: student.name,
+                phone: student.phone || '',
+              });
             });
           }
         });

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 获取所有班级，并计算每个班级的学生数量
+    // 获取所有班级，并包含学生详细信息
     const classes = await prisma.class.findMany({
       include: {
         classStudents: {
@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
           },
           select: {
             id: true,
+            studentName: true,
+            studentPhone: true,
+            enrolledAt: true,
           },
         },
       },
@@ -41,18 +44,24 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 格式化返回数据，添加学生数量
-    const classesWithCount = classes.map((cls) => ({
+    // 格式化返回数据
+    const classesWithStudents = classes.map((cls) => ({
       id: cls.id,
       name: cls.name,
       grade: cls.grade,
       studentCount: cls.classStudents.length,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
+      students: cls.classStudents.map((cs) => ({
+        id: cs.id,
+        name: cs.studentName,
+        phone: cs.studentPhone || '',
+        enrolledAt: cs.enrolledAt,
+      })),
     }));
 
     return NextResponse.json({
-      classes: classesWithCount,
+      classes: classesWithStudents,
     });
   } catch (error) {
     console.error('获取班级列表失败:', error);
