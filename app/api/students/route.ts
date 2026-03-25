@@ -12,6 +12,52 @@ const addStudentSchema = z.object({
   classId: z.string().cuid('班级 ID 格式不正确'),
 });
 
+// GET: 搜索学生（按姓名）
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: '请先登录' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const keyword = searchParams.get('keyword') || '';
+
+    if (!keyword) {
+      return NextResponse.json([]);
+    }
+
+    // 按姓名搜索学生用户
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'STUDENT',
+        name: {
+          contains: keyword,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+      },
+      take: 20,
+    });
+
+    return NextResponse.json(students);
+  } catch (error) {
+    console.error('搜索学生失败:', error);
+    return NextResponse.json(
+      { error: '搜索失败，请稍后重试' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST: 添加学生到班级
 export async function POST(request: NextRequest) {
   try {

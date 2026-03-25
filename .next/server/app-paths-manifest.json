@@ -1,4 +1,5 @@
 {
+  "/api/classes/[id]/route": "app/api/classes/[id]/route.js",
   "/dashboard/classes/page": "app/dashboard/classes/page.js",
   "/dashboard/classes/[id]/page": "app/dashboard/classes/[id]/page.js"
 }
