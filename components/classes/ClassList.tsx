@@ -31,7 +31,7 @@ export default function ClassList({ classes, onRefresh }: ClassListProps) {
       {classes.map((cls) => (
         <Link
           key={cls.id}
-          href={`/classes/${cls.id}`}
+          href={`/dashboard/classes/${cls.id}`}
           className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200"
         >
           <div className="p-6">
