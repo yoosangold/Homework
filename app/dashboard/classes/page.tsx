@@ -138,7 +138,7 @@ export default function ClassesPage() {
                   id="name"
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   placeholder="如：2024 级 1 班"
                   required
                 />
@@ -151,7 +151,7 @@ export default function ClassesPage() {
                   id="grade"
                   value={newClassGrade}
                   onChange={(e) => setNewClassGrade(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
                     <option key={grade} value={grade}>

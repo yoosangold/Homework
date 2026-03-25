@@ -141,7 +141,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
             value={score}
             onChange={(e) => setScore(e.target.value === '' ? '' : Number(e.target.value))}
             placeholder="0-100"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
           />
         </div>
         <div>
@@ -151,7 +151,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
           <select
             value={grade}
             onChange={(e) => setGrade(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           >
             <option value="">选择等级</option>
             {GRADE_OPTIONS.map(option => (
@@ -173,7 +173,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
           onChange={(e) => setFeedback(e.target.value)}
           placeholder="写下对学生的评价和建议..."
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
         />
       </div>
 
@@ -204,7 +204,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
                 onChange={(e) => setQuestionContent(e.target.value)}
                 placeholder="描述题目内容..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                 required={isWrong}
               />
             </div>
@@ -220,7 +220,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
                   onChange={(e) => setStudentAnswer(e.target.value)}
                   placeholder="学生的答案..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                 />
               </div>
               <div>
@@ -232,7 +232,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
                   onChange={(e) => setCorrectAnswer(e.target.value)}
                   placeholder="正确答案..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   required={isWrong}
                 />
               </div>
@@ -246,7 +246,7 @@ export default function CorrectionForm({ assignmentId, studentId, subject, onSuc
               <select
                 value={errorType}
                 onChange={(e) => setErrorType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="">选择错误类型</option>
                 {ERROR_TYPE_OPTIONS.map(option => (

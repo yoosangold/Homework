@@ -141,7 +141,7 @@ export default function AssignmentUpload({ students = [], onSuccess }: Assignmen
           <select
             value={formData.studentId}
             onChange={handleStudentChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             required
           >
             <option value="">选择学生</option>
@@ -157,7 +157,7 @@ export default function AssignmentUpload({ students = [], onSuccess }: Assignmen
             value={formData.studentName}
             onChange={handleStudentNameChange}
             placeholder="输入学生姓名"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
             required
           />
         )}
@@ -171,7 +171,7 @@ export default function AssignmentUpload({ students = [], onSuccess }: Assignmen
         <select
           value={formData.subject}
           onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value as any }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           required
         >
           {SUBJECT_OPTIONS.map(option => (
@@ -192,7 +192,7 @@ export default function AssignmentUpload({ students = [], onSuccess }: Assignmen
           value={formData.title}
           onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
           placeholder="例如：数学作业 - 第三章练习"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
           required
         />
       </div>
@@ -207,7 +207,7 @@ export default function AssignmentUpload({ students = [], onSuccess }: Assignmen
           onChange={(e) => setFormData(prev => ({ ...prev, instruction: e.target.value }))}
           placeholder="添加作业说明或备注..."
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
         />
       </div>
 

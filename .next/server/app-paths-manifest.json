@@ -1,5 +1,4 @@
 {
-  "/not-found": "app/not-found.js",
-  "/api/classes/route": "app/api/classes/route.js",
-  "/dashboard/classes/page": "app/dashboard/classes/page.js"
+  "/dashboard/classes/page": "app/dashboard/classes/page.js",
+  "/dashboard/classes/[id]/page": "app/dashboard/classes/[id]/page.js"
 }

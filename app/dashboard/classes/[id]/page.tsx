@@ -309,7 +309,7 @@ export default function ClassDetailPage() {
                   id="userId"
                   value={studentUserId}
                   onChange={(e) => setStudentUserId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   placeholder="请输入学生用户 ID"
                   required
                 />

@@ -135,7 +135,7 @@ export default function StudentTransferForm({
                 id="targetClass"
                 value={targetClassId}
                 onChange={(e) => setTargetClassId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 {classes.map((cls) => (
                   <option key={cls.id} value={cls.id}>
