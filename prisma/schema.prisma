@@ -44,17 +44,19 @@ model Class {
 
 /// 班级 - 学生关联表（支持调班）
 model ClassStudent {
-  id         String   @id @default(cuid())
-  userId     String
-  classId    String
-  enrolledAt DateTime @default(now())
-  isActive   Boolean  @default(true)
-  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String?   // 可选，如果学生后来注册了可以关联
+  studentName String    // 学生姓名
+  studentPhone String?  // 学生手机号（选填，用于邀请家长注册）
+  classId     String
+  enrolledAt  DateTime  @default(now())
+  isActive    Boolean   @default(true)
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@unique([userId, classId])
   @@index([userId])
   @@index([classId])
+  @@index([studentPhone])
 }
 
 /// 班级 - 老师关联表

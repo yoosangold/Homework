@@ -83,10 +83,10 @@ export async function GET(
       students: cls.classStudents.map((cs) => ({
         id: cs.id,
         userId: cs.userId,
-        name: cs.user.name,
-        phone: cs.user.phone,
-        email: cs.user.email,
-        role: cs.user.role,
+        name: cs.studentName, // 使用 ClassStudent 表中的姓名
+        phone: cs.studentPhone || cs.user?.phone, // 优先使用 ClassStudent 表中的手机号
+        email: cs.user?.email || '',
+        role: cs.user?.role || 'STUDENT',
         enrolledAt: cs.enrolledAt,
       })),
       teachers: cls.classTeachers.map((ct) => ({

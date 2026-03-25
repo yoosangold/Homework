@@ -3,13 +3,9 @@
 import { useEffect, useState } from 'react';
 
 interface Student {
-  id: string;
-  userId: string;
+  id: string; // ClassStudent 的 ID
   name: string;
   phone: string;
-  email: string;
-  role: string;
-  enrolledAt: string;
 }
 
 interface ClassItem {
@@ -24,6 +20,13 @@ interface StudentTransferFormProps {
   currentClassId: string;
   onSuccess: () => void;
   onClose: () => void;
+}
+
+interface ClassItem {
+  id: string;
+  name: string;
+  grade: number;
+  studentCount: number;
 }
 
 export default function StudentTransferForm({
@@ -84,7 +87,7 @@ export default function StudentTransferForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: student.userId,
+          classStudentId: student.id, // 使用 ClassStudent 的 ID
           targetClassId,
         }),
       });

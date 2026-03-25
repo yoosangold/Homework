@@ -50,10 +50,8 @@ export default function ClassDetailPage() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [addingStudent, setAddingStudent] = useState(false);
-  const [studentUserId, setStudentUserId] = useState('');
-  const [studentNameSearch, setStudentNameSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentPhone, setNewStudentPhone] = useState('');
 
   // 获取班级详情
   const fetchClassDetail = async () => {
@@ -79,43 +77,12 @@ export default function ClassDetailPage() {
     }
   }, [classId]);
 
-  // 搜索学生
-  const handleSearchStudents = async (keyword: string) => {
-    setStudentNameSearch(keyword);
-    
-    if (!keyword.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setSearching(true);
-    try {
-      const res = await fetch(`/api/students?keyword=${encodeURIComponent(keyword)}`);
-      const data = await res.json();
-      
-      if (res.ok) {
-        setSearchResults(data);
-      }
-    } catch (err) {
-      console.error('搜索失败:', err);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // 选择学生
-  const handleSelectStudent = (student: any) => {
-    setStudentUserId(student.id);
-    setStudentNameSearch(student.name);
-    setSearchResults([]);
-  };
-
   // 添加学生
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!studentUserId) {
-      alert('请选择学生');
+    if (!newStudentName) {
+      alert('请填写学生姓名');
       return;
     }
     
@@ -126,7 +93,8 @@ export default function ClassDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: studentUserId,
+          studentName: newStudentName,
+          studentPhone: newStudentPhone || undefined,
           classId,
         }),
       });
@@ -142,9 +110,8 @@ export default function ClassDetailPage() {
       
       // 关闭弹窗并重置
       setShowAddStudentModal(false);
-      setStudentUserId('');
-      setStudentNameSearch('');
-      setSearchResults([]);
+      setNewStudentName('');
+      setNewStudentPhone('');
     } catch (err) {
       alert(err instanceof Error ? err.message : '添加学生失败');
     } finally {
@@ -342,42 +309,34 @@ export default function ClassDetailPage() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-medium text-gray-900 mb-4">添加学生</h2>
             <form onSubmit={handleAddStudent}>
-              <div className="mb-6">
-                <label htmlFor="studentSearch" className="block text-sm font-medium text-gray-700 mb-1">
-                  学生姓名
+              <div className="mb-4">
+                <label htmlFor="studentName" className="block text-sm font-medium text-gray-700 mb-1">
+                  学生姓名 <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="studentSearch"
-                  value={studentNameSearch}
-                  onChange={(e) => handleSearchStudents(e.target.value)}
+                  id="studentName"
+                  value={newStudentName}
+                  onChange={(e) => setNewStudentName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                  placeholder="输入学生姓名搜索..."
-                  autoComplete="off"
+                  placeholder="请输入学生姓名"
+                  required
                 />
-                {searching && (
-                  <div className="mt-2 text-sm text-gray-500">搜索中...</div>
-                )}
-                {searchResults.length > 0 && (
-                  <div className="mt-2 border border-gray-200 rounded-md max-h-48 overflow-y-auto">
-                    {searchResults.map((student) => (
-                      <button
-                        key={student.id}
-                        type="button"
-                        onClick={() => handleSelectStudent(student)}
-                        className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
-                      >
-                        <div className="font-medium text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-500">{student.phone}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {studentNameSearch && searchResults.length === 0 && !searching && (
-                  <div className="mt-2 text-sm text-gray-500">未找到匹配的学生</div>
-                )}
-                <p className="mt-2 text-xs text-gray-500">
-                  提示：只有注册为学生角色的用户才会显示
+              </div>
+              <div className="mb-6">
+                <label htmlFor="studentPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                  学生手机号 <span className="text-gray-400">(选填)</span>
+                </label>
+                <input
+                  type="tel"
+                  id="studentPhone"
+                  value={newStudentPhone}
+                  onChange={(e) => setNewStudentPhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+                  placeholder="用于邀请家长注册（选填）"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  💡 填写手机号后，可邀请家长注册账号查看学习情况
                 </p>
               </div>
               <div className="flex justify-end space-x-3">
@@ -385,9 +344,8 @@ export default function ClassDetailPage() {
                   type="button"
                   onClick={() => {
                     setShowAddStudentModal(false);
-                    setStudentUserId('');
-                    setStudentNameSearch('');
-                    setSearchResults([]);
+                    setNewStudentName('');
+                    setNewStudentPhone('');
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
@@ -395,7 +353,7 @@ export default function ClassDetailPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={addingStudent || !studentUserId}
+                  disabled={addingStudent || !newStudentName}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingStudent ? '添加中...' : '添加'}

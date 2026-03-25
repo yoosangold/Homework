@@ -8,11 +8,12 @@ const prisma = new PrismaClient();
 
 // 添加学生验证 schema
 const addStudentSchema = z.object({
-  userId: z.string().cuid('用户 ID 格式不正确'),
+  studentName: z.string().min(1, '学生姓名不能为空'),
+  studentPhone: z.string().optional(),
   classId: z.string().cuid('班级 ID 格式不正确'),
 });
 
-// GET: 搜索学生（按姓名）
+// GET: 搜索学生（按姓名或手机号）
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,24 +27,48 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const keyword = searchParams.get('keyword') || '';
+    const classId = searchParams.get('classId') || '';
 
-    if (!keyword) {
+    if (!keyword && !classId) {
       return NextResponse.json([]);
     }
 
-    // 按姓名搜索学生用户
-    const students = await prisma.user.findMany({
-      where: {
-        role: 'STUDENT',
-        name: {
-          contains: keyword,
-        },
-      },
+    // 构建查询条件
+    const whereClause: any = {};
+    
+    if (classId) {
+      whereClause.classId = classId;
+    }
+    
+    if (keyword) {
+      whereClause.OR = [
+        { studentName: { contains: keyword } },
+        { studentPhone: { contains: keyword } },
+      ];
+    }
+
+    // 搜索学生（包括已注册和未注册的）
+    const students = await prisma.classStudent.findMany({
+      where: whereClause,
       select: {
         id: true,
-        name: true,
-        phone: true,
-        email: true,
+        userId: true,
+        studentName: true,
+        studentPhone: true,
+        classId: true,
+        enrolledAt: true,
+        isActive: true,
+        class: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            phone: true,
+            email: true,
+          },
+        },
       },
       take: 20,
     });
@@ -74,27 +99,7 @@ export async function POST(request: NextRequest) {
 
     // 验证请求数据
     const validatedData = addStudentSchema.parse(body);
-    const { userId, classId } = validatedData;
-
-    // 检查用户是否存在
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: '用户不存在' },
-        { status: 404 }
-      );
-    }
-
-    // 检查用户是否已经是 STUDENT 角色
-    if (user.role !== 'STUDENT') {
-      return NextResponse.json(
-        { error: '该用户不是学生角色' },
-        { status: 400 }
-      );
-    }
+    const { studentName, studentPhone, classId } = validatedData;
 
     // 检查班级是否存在
     const cls = await prisma.class.findUnique({
@@ -108,57 +113,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查学生是否已经在该班级
-    const existingRelation = await prisma.classStudent.findUnique({
-      where: {
-        userId_classId: {
-          userId,
-          classId,
+    // 如果提供了手机号，检查是否已经存在
+    if (studentPhone) {
+      const existingStudent = await prisma.classStudent.findFirst({
+        where: { 
+          studentPhone,
+          classId: { not: classId }, // 不同班级的相同手机号
+          isActive: true,
         },
-      },
-    });
+      });
 
-    if (existingRelation) {
-      if (existingRelation.isActive) {
+      if (existingStudent) {
         return NextResponse.json(
-          { error: '该学生已经在班级中' },
+          { error: '该手机号的学生已在其他班级' },
           { status: 400 }
         );
-      } else {
-        // 如果之前有记录但不活跃，更新为活跃
-        const updatedRelation = await prisma.classStudent.update({
-          where: { id: existingRelation.id },
-          data: { isActive: true },
-        });
-
-        return NextResponse.json({
-          message: '学生已重新加入班级',
-          relation: {
-            id: updatedRelation.id,
-            userId: updatedRelation.userId,
-            classId: updatedRelation.classId,
-            enrolledAt: updatedRelation.enrolledAt,
-            isActive: updatedRelation.isActive,
-          },
-        });
       }
     }
 
-    // 创建班级 - 学生关联
+    // 创建班级 - 学生关联（无需 User 表）
     const newRelation = await prisma.classStudent.create({
       data: {
-        userId,
+        studentName,
+        studentPhone: studentPhone || null,
         classId,
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            email: true,
-          },
-        },
         class: {
           select: {
             id: true,
@@ -173,11 +153,11 @@ export async function POST(request: NextRequest) {
       message: '学生添加成功',
       relation: {
         id: newRelation.id,
-        userId: newRelation.userId,
+        studentName: newRelation.studentName,
+        studentPhone: newRelation.studentPhone,
         classId: newRelation.classId,
         enrolledAt: newRelation.enrolledAt,
         isActive: newRelation.isActive,
-        student: newRelation.user,
         class: newRelation.class,
       },
     });
