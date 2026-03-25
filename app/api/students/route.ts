@@ -136,16 +136,19 @@ export async function POST(request: NextRequest) {
       data: {
         studentName,
         studentPhone: studentPhone || null,
-        classId,
-      },
-      include: {
         class: {
-          select: {
-            id: true,
-            name: true,
-            grade: true,
-          },
+          connect: { id: classId },
         },
+      },
+    });
+    
+    // 获取班级信息
+    const classInfo = await prisma.class.findUnique({
+      where: { id: classId },
+      select: {
+        id: true,
+        name: true,
+        grade: true,
       },
     });
 
@@ -158,7 +161,7 @@ export async function POST(request: NextRequest) {
         classId: newRelation.classId,
         enrolledAt: newRelation.enrolledAt,
         isActive: newRelation.isActive,
-        class: newRelation.class,
+        class: classInfo,
       },
     });
   } catch (error) {
