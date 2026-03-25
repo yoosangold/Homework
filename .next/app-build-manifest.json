@@ -36,10 +36,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/assignments/page.js"
     ],
-    "/not-found": [
+    "/dashboard/wrong-questions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/not-found.js"
+      "static/chunks/app/dashboard/wrong-questions/page.js"
     ]
   }
 }

@@ -1,8 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { MasteryStatusBadge } from './MasteryStatusBadge';
 import { useRouter } from 'next/navigation';
 
@@ -50,32 +47,32 @@ export function WrongQuestionCard({
     if (onViewDetail) {
       onViewDetail();
     } else {
-      router.push(`/wrong-questions/${question.id}`);
+      router.push(`/dashboard/wrong-questions/${question.id}`);
     }
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg line-clamp-2">
-              {question.questionContent}
-            </CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-xs">
-                {subjectLabels[question.knowledgePoint.subject] || question.knowledgePoint.subject}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {question.knowledgePoint.name}
-              </Badge>
-              <MasteryStatusBadge status={question.masteryStatus || 'NEW'} />
-            </div>
+    <div
+      className="bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer p-4"
+      onClick={handleViewDetail}
+    >
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">
+            {question.questionContent}
+          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+              {subjectLabels[question.knowledgePoint.subject] || question.knowledgePoint.subject}
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+              {question.knowledgePoint.name}
+            </span>
+            <MasteryStatusBadge status={question.masteryStatus || 'NEW'} />
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="text-sm text-muted-foreground">
+
+        <div className="text-sm text-gray-600">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="font-medium">学生:</span> {question.student.name}
@@ -95,28 +92,28 @@ export function WrongQuestionCard({
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="flex-1"
-            onClick={handleViewDetail}
+          <button
+            className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetail();
+            }}
           >
             查看详情
-          </Button>
+          </button>
           {onDelete && (
-            <Button
-              variant="destructive"
-              size="sm"
+            <button
+              className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
               删除
-            </Button>
+            </button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

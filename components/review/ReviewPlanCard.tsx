@@ -1,11 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, RotateCcw } from 'lucide-react';
-
 interface ReviewPlanItem {
   id: string;
   questionContent: string;
@@ -48,11 +42,6 @@ export function ReviewPlanCard({
     return 'text-red-600';
   };
 
-  const getReviewCountLabel = (count: number) => {
-    if (count === 0) return '新题';
-    return `第${count + 1}次复习`;
-  };
-
   const formatNextReview = (nextReviewAt: string | null) => {
     if (!nextReviewAt) return '待安排';
     const date = new Date(nextReviewAt);
@@ -76,79 +65,81 @@ export function ReviewPlanCard({
   };
 
   return (
-    <Card className={`hover:shadow-md transition-shadow ${item.isCompleted ? 'bg-green-50' : ''}`}>
-      <CardHeader className="pb-3">
+    <div className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4 ${item.isCompleted ? 'border-2 border-green-500' : ''}`}>
+      <div className="space-y-3">
         <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <CardTitle className="text-base line-clamp-2">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
               {item.questionContent}
-            </CardTitle>
+            </h3>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant="outline"
-                className={subjectColors[item.subject] || 'bg-gray-100 text-gray-800'}
-              >
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${subjectColors[item.subject] || 'bg-gray-100 text-gray-800'}`}>
                 {subjectLabels[item.subject] || item.subject}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
+              </span>
+              <span className="text-xs text-gray-600 truncate max-w-[150px]">
                 {item.knowledgePointName}
-              </Badge>
-              <Badge
-                variant={item.isCompleted ? 'default' : 'outline'}
-                className="text-xs"
-              >
-                {getReviewCountLabel(item.reviewCount)}
-              </Badge>
+              </span>
             </div>
           </div>
+          {item.isCompleted && (
+            <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+
         {/* 掌握程度 */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">掌握程度</span>
+        <div>
+          <div className="flex justify-between items-center text-xs mb-1">
+            <span className="text-gray-600">掌握程度</span>
             <span className={`font-medium ${getMasteryColor(item.masteryLevel)}`}>
               {item.masteryLevel}%
             </span>
           </div>
-          <Progress value={item.masteryLevel} className="h-2" />
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div
+              className={`${item.masteryLevel >= 80 ? 'bg-green-500' : item.masteryLevel >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-1.5 rounded-full`}
+              style={{ width: `${item.masteryLevel}%` }}
+            ></div>
+          </div>
         </div>
 
-        {/* 下次复习时间 */}
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <span className="text-muted-foreground">下次复习:</span>
-          <span className={item.isCompleted ? 'text-green-600' : 'text-orange-600'}>
-            {formatNextReview(item.nextReviewAt)}
-          </span>
+        {/* 复习信息 */}
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <div className="flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{item.reviewCount === 0 ? '新题' : `第${item.reviewCount + 1}次`}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>{formatNextReview(item.nextReviewAt)}</span>
+          </div>
         </div>
 
         {/* 操作按钮 */}
-        <div className="flex gap-2 pt-2">
-          {item.isCompleted ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => onReview?.(item.id)}
+        {!item.isCompleted && (
+          <div className="pt-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onMarkComplete) {
+                  onMarkComplete(item.reviewPlanId);
+                }
+              }}
+              className="w-full px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition flex items-center justify-center gap-1"
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
-              重新复习
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="flex-1"
-              onClick={() => onMarkComplete?.(item.reviewPlanId)}
-            >
-              <CheckCircle className="w-4 h-4 mr-1" />
-              标记完成
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              完成复习
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

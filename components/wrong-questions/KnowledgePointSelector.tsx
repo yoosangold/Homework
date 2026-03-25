@@ -1,16 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface KnowledgePoint {
   id: string;
@@ -74,41 +64,40 @@ export function KnowledgePointSelector({
   if (loading) {
     return (
       <div className={className}>
-        <Label>知识点</Label>
-        <Skeleton className="h-10 w-full" />
+        <label className="block text-sm font-medium text-gray-700 mb-1">知识点</label>
+        <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
       </div>
     );
   }
 
   return (
     <div className={className}>
-      <Label>知识点</Label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">知识点</label>
       <div className="space-y-2">
-        <Input
+        <input
+          type="text"
           placeholder="搜索知识点..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
         />
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {knowledgePoints.length === 0 ? (
-              <SelectItem value="none" disabled>
-                暂无知识点
-              </SelectItem>
-            ) : (
-              knowledgePoints.map((kp) => (
-                <SelectItem key={kp.id} value={kp.id}>
-                  {kp.name} ({kp.code})
-                  {kp.parent && ` - ${kp.parent.name}`}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+        <select
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+        >
+          <option value="">{placeholder}</option>
+          {knowledgePoints.length === 0 ? (
+            <option value="" disabled>暂无知识点</option>
+          ) : (
+            knowledgePoints.map((kp) => (
+              <option key={kp.id} value={kp.id}>
+                {kp.name} ({kp.code})
+                {kp.parent && ` - ${kp.parent.name}`}
+              </option>
+            ))
+          )}
+        </select>
       </div>
     </div>
   );

@@ -1,10 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { BarChart3, TrendingUp } from 'lucide-react';
-
 interface MasteryItem {
   id: string;
   knowledgePointName: string;
@@ -31,6 +26,10 @@ const subjectColors: Record<string, string> = {
 };
 
 export function MasteryChart({ items = [], title = '掌握程度分析' }: MasteryChartProps) {
+  if (items.length === 0) {
+    return null;
+  }
+
   // 按掌握程度分组统计
   const masteryRanges = [
     { label: '未掌握', min: 0, max: 20, color: 'text-red-600', bg: 'bg-red-100' },
@@ -70,109 +69,70 @@ export function MasteryChart({ items = [], title = '掌握程度分析' }: Maste
     stat.average = stat.count > 0 ? Math.round(stat.total / stat.count) : 0;
   });
 
-  // 按掌握程度排序的知识点（前 10 个）
-  const topKnowledgePoints = [...items]
-    .sort((a, b) => b.masteryLevel - a.masteryLevel)
-    .slice(0, 10);
-
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          <CardTitle className="text-lg">{title}</CardTitle>
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        {title}
+      </h2>
+
+      {/* 掌握程度分布 */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">掌握程度分布</h3>
+        <div className="flex gap-2">
+          {distribution.map((range) => (
+            <div key={range.label} className="flex-1 text-center">
+              <div className={`text-2xl font-bold ${range.color}`}>{range.count}</div>
+              <div className="text-xs text-gray-600">{range.label}</div>
+            </div>
+          ))}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* 掌握程度分布 */}
+      </div>
+
+      {/* 按科目统计 */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">按科目统计</h3>
         <div className="space-y-3">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            掌握程度分布
-          </h4>
-          <div className="space-y-2">
-            {distribution.map((range) => (
-              <div key={range.label} className="flex items-center gap-3">
-                <div className={`w-20 text-xs ${range.color}`}>{range.label}</div>
-                <div className={`flex-1 h-6 ${range.bg} rounded-full overflow-hidden`}>
-                  <div
-                    className={`h-full ${range.color.replace('text', 'bg')} transition-all duration-500`}
-                    style={{
-                      width: `${items.length > 0 ? (range.count / items.length) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-                <div className="w-12 text-xs text-right text-muted-foreground">
-                  {range.count}
-                </div>
+          {Object.values(subjectStats).map((stat) => (
+            <div key={stat.name} className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 w-16">{stat.name}</span>
+              <div className="flex-1 bg-gray-200 rounded-full h-2.5">
+                <div
+                  className={`${subjectColors[Object.keys(subjectStats).find(key => subjectStats[key] === stat)] || 'bg-gray-500'} h-2.5 rounded-full`}
+                  style={{ width: `${stat.average}%` }}
+                ></div>
+              </div>
+              <span className="text-sm text-gray-900 w-12 text-right">{stat.average}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 掌握最好的知识点 */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+          <svg className="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          掌握最好的知识点
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {[...items]
+            .sort((a, b) => b.masteryLevel - a.masteryLevel)
+            .slice(0, 6)
+            .map((item, index) => (
+              <div key={item.id} className="flex items-center gap-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-xs font-medium">
+                  {index + 1}
+                </span>
+                <span className="text-sm text-gray-900 truncate flex-1">{item.knowledgePointName}</span>
+                <span className="text-xs text-gray-500">{item.masteryLevel}%</span>
               </div>
             ))}
-          </div>
         </div>
-
-        {/* 按科目平均掌握程度 */}
-        {Object.keys(subjectStats).length > 0 && (
-          <div className="space-y-3 pt-4 border-t">
-            <h4 className="text-sm font-medium">科目平均掌握程度</h4>
-            <div className="grid grid-cols-1 gap-3">
-              {Object.values(subjectStats).map((stat) => (
-                <div key={stat.name} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>{stat.name}</span>
-                    <span className="font-medium">{stat.average}%</span>
-                  </div>
-                  <Progress value={stat.average} className="h-2" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 掌握程度最高的知识点 */}
-        {topKnowledgePoints.length > 0 && (
-          <div className="space-y-3 pt-4 border-t">
-            <h4 className="text-sm font-medium">知识点掌握排行</h4>
-            <div className="space-y-2">
-              {topKnowledgePoints.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  <div className="w-6 text-center text-sm font-bold text-muted-foreground">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {item.knowledgePointName}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {subjectLabels[item.subject]} · {item.reviewCount}次复习
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={`${
-                      item.masteryLevel >= 80
-                        ? 'bg-green-100 text-green-800'
-                        : item.masteryLevel >= 60
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {item.masteryLevel}%
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {items.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            暂无数据，开始复习后这里会显示掌握程度分析
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
