@@ -1,7 +1,12 @@
 # Dependencies
-node_modules
+node_modules/
 .pnp
 .pnp.js
+
+# Build outputs
+.next/
+out/
+build/
 
 # Build outputs
 .next
