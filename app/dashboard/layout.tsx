@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import Link from 'next/link';
+import LogoutButton from '@/components/auth/LogoutButton';
 
 export default async function DashboardLayout({
   children,
@@ -24,7 +25,7 @@ export default async function DashboardLayout({
               <h1 className="text-xl font-bold text-gray-900">作业批改系统</h1>
               <nav className="ml-10 flex space-x-8">
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   首页
@@ -35,12 +36,31 @@ export default async function DashboardLayout({
                 >
                   班级管理
                 </Link>
+                <Link
+                  href="/dashboard/assignments"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                >
+                  作业管理
+                </Link>
+                <Link
+                  href="/dashboard/wrong-questions"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                >
+                  错题本
+                </Link>
+                <Link
+                  href="/dashboard/review-plans"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                >
+                  复习计划
+                </Link>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {session.user.name} ({session.user.role})
+                {session.user.name} ({session.user.role === 'TEACHER' ? '老师' : session.user.role === 'PARENT' ? '家长' : session.user.role})
               </span>
+              <LogoutButton />
             </div>
           </div>
         </div>

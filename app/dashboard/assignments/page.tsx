@@ -32,18 +32,61 @@ export default function AssignmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 获取当前老师的班级学生列表
-    // 这里用模拟数据
-    setStudents([
-      { id: '1', name: '张三', phone: '13800138000' },
-      { id: '2', name: '李四', phone: '13800138001' },
-      { id: '3', name: '王五', phone: '13800138002' },
-    ]);
-    setLoading(false);
+    fetchStudents();
+    fetchAssignments();
   }, []);
 
-  const handleQuickUpload = (studentId: string) => {
-    setSelectedStudent(studentId);
+  // 获取班级学生列表
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch('/api/classes');
+      const data = await response.json();
+      
+      if (response.ok && data.classes) {
+        // 从所有班级中提取学生
+        const allStudents: Student[] = [];
+        data.classes.forEach((cls: any) => {
+          if (cls.classStudents) {
+            cls.classStudents.forEach((cs: any) => {
+              if (cs.isActive && cs.studentName) {
+                allStudents.push({
+                  id: cs.id,
+                  name: cs.studentName,
+                  phone: cs.studentPhone || '',
+                });
+              }
+            });
+          }
+        });
+        setStudents(allStudents);
+      }
+    } catch (error) {
+      console.error('获取学生列表失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 获取作业列表
+  const fetchAssignments = async () => {
+    try {
+      const response = await fetch('/api/assignments');
+      const data = await response.json();
+      
+      if (response.ok && data.assignments) {
+        setAssignments(data.assignments);
+      }
+    } catch (error) {
+      console.error('获取作业列表失败:', error);
+    }
+  };
+
+  const handleQuickUpload = (studentId: string, studentName: string) => {
+    // 将学生信息传递到上传页面
+    sessionStorage.setItem('selectedStudent', JSON.stringify({
+      id: studentId,
+      name: studentName,
+    }));
     router.push('/dashboard/assignments/upload');
   };
 
@@ -68,19 +111,26 @@ export default function AssignmentsPage() {
         {loading ? (
           <div className="text-gray-500">加载中...</div>
         ) : students.length === 0 ? (
-          <div className="text-gray-500">暂无学生</div>
+          <div className="text-gray-500 py-8 text-center">
+            <p>暂无学生</p>
+            <p className="text-sm mt-2">
+              请先在 <a href="/dashboard/classes" className="text-blue-600 hover:underline">班级管理</a> 中添加学生
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {students.map((student) => (
               <div
                 key={student.id}
                 className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer"
-                onClick={() => handleQuickUpload(student.id)}
+                onClick={() => handleQuickUpload(student.id, student.name)}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-gray-900">{student.name}</p>
-                    <p className="text-sm text-gray-500">{student.phone}</p>
+                    {student.phone && (
+                      <p className="text-sm text-gray-500">{student.phone}</p>
+                    )}
                   </div>
                   <svg
                     className="w-5 h-5 text-blue-600"

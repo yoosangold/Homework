@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AssignmentUploadPage() {
@@ -11,6 +11,19 @@ export default function AssignmentUploadPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<{id: string; name: string} | null>(null);
+
+  // 页面加载时检查是否有选中的学生
+  useEffect(() => {
+    const stored = sessionStorage.getItem('selectedStudent');
+    if (stored) {
+      try {
+        setSelectedStudent(JSON.parse(stored));
+      } catch (e) {
+        console.error('解析学生信息失败:', e);
+      }
+    }
+  }, []);
 
   // 处理文件选择
   const handleFile = (file: File) => {
@@ -54,6 +67,12 @@ export default function AssignmentUploadPage() {
       return;
     }
 
+    if (!selectedStudent) {
+      setError('请选择学生');
+      router.push('/dashboard/assignments');
+      return;
+    }
+
     setUploading(true);
     setError('');
 
@@ -66,12 +85,13 @@ export default function AssignmentUploadPage() {
         const base64Image = reader.result as string;
         
         // TODO: 调用 API 上传作业
-        // 这里需要实现自动识别科目的逻辑
         const response = await fetch('/api/assignments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: selectedFile.name,
+            title: `${selectedStudent.name}的作业`,
+            studentId: selectedStudent.id,
+            studentName: selectedStudent.name,
             images: [base64Image],
             // 科目由系统自动识别
           }),
@@ -81,6 +101,8 @@ export default function AssignmentUploadPage() {
 
         if (response.ok) {
           alert('作业上传成功！');
+          // 清除选中的学生
+          sessionStorage.removeItem('selectedStudent');
           router.push('/dashboard/assignments');
         } else {
           setError(result.error || '上传失败');
@@ -95,10 +117,46 @@ export default function AssignmentUploadPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">上传作业</h1>
-        <p className="text-gray-600 mt-1">拖拽作业图片到下方区域即可自动上传</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">上传作业</h1>
+          <p className="text-gray-600 mt-1">拖拽作业图片到下方区域即可自动上传</p>
+        </div>
+        <button
+          onClick={() => router.back()}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          ← 返回
+        </button>
       </div>
+
+      {/* 选中的学生信息 */}
+      {selectedStudent ? (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-800">当前学生</p>
+              <p className="text-lg font-semibold text-blue-900">{selectedStudent.name}</p>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedStudent(null);
+                sessionStorage.removeItem('selectedStudent');
+                router.push('/dashboard/assignments');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              更换学生
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            ⚠️ 请先返回 <a href="/dashboard/assignments" className="underline font-medium">作业管理</a> 选择学生
+          </p>
+        </div>
+      )}
 
       {/* 拖拽上传区域 */}
       <div
@@ -183,7 +241,7 @@ export default function AssignmentUploadPage() {
       )}
 
       {/* 上传按钮 */}
-      {selectedFile && (
+      {selectedFile && selectedStudent && (
         <button
           onClick={handleUpload}
           disabled={uploading}
