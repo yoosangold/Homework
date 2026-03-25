@@ -28,6 +28,7 @@ const subjectMap: Record<string, Subject> = {
 };
 
 interface KnowledgePointNode {
+  id?: string;
   name: string;
   code: string;
   subject: Subject;

@@ -27,8 +27,7 @@ export default function LoginForm() {
       if (result?.error) {
         setError(result.error);
       } else {
-        router.push('/');
-        router.refresh();
+        router.push('/dashboard');
       }
     } catch (err) {
       setError('登录失败，请稍后重试');
