@@ -2,22 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { MasteryStatusBadge } from '@/components/wrong-questions/MasteryStatusBadge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Edit, Save, X, Image as ImageIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface WrongQuestion {
   id: string;
@@ -32,20 +17,12 @@ interface WrongQuestion {
   student: {
     id: string;
     name: string;
-    phone: string;
-    email: string;
   };
   knowledgePoint: {
     id: string;
     name: string;
     code: string;
     subject: string;
-    description?: string | null;
-    parent?: {
-      id: string;
-      name: string;
-      code: string;
-    } | null;
   };
 }
 
@@ -58,7 +35,6 @@ const subjectLabels: Record<string, string> = {
 export default function WrongQuestionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { toast } = useToast();
 
   const [question, setQuestion] = useState<WrongQuestion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,31 +59,21 @@ export default function WrongQuestionDetailPage() {
         setMasteryStatus(data.data.masteryStatus || 'NEW');
         setNotes(data.data.notes || '');
       } else {
-        toast({
-          title: '加载失败',
-          description: data.error || '无法获取错题详情',
-          variant: 'destructive',
-        });
-        router.push('/wrong-questions');
+        alert('加载失败：' + (data.error || '无法获取错题详情'));
+        router.push('/dashboard/wrong-questions');
       }
     } catch (error) {
       console.error('获取错题详情失败:', error);
-      toast({
-        title: '加载失败',
-        description: '请稍后重试',
-        variant: 'destructive',
-      });
+      alert('加载失败，请稍后重试');
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdate = async () => {
-    if (!question) return;
-
     setUpdating(true);
     try {
-      const response = await fetch(`/api/wrong-questions/${question.id}`, {
+      const response = await fetch(`/api/wrong-questions/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,289 +84,175 @@ export default function WrongQuestionDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: '更新成功',
-          description: '错题记录已更新',
-        });
-        setQuestion(data.data);
+        alert('更新成功');
         setEditing(false);
+        fetchQuestion(params.id as string);
       } else {
-        toast({
-          title: '更新失败',
-          description: data.error || '请稍后重试',
-          variant: 'destructive',
-        });
+        alert('更新失败：' + data.error);
       }
     } catch (error) {
       console.error('更新错题失败:', error);
-      toast({
-        title: '更新失败',
-        description: '请稍后重试',
-        variant: 'destructive',
-      });
+      alert('更新失败，请稍后重试');
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!question) return;
-    if (!confirm('确定要删除这道错题吗？')) return;
-
-    try {
-      const response = await fetch(`/api/wrong-questions/${question.id}`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: '删除成功',
-          description: '错题记录已删除',
-        });
-        router.push('/wrong-questions');
-      } else {
-        toast({
-          title: '删除失败',
-          description: data.error || '请稍后重试',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('删除错题失败:', error);
-      toast({
-        title: '删除失败',
-        description: '请稍后重试',
-        variant: 'destructive',
-      });
-    }
-  };
-
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-32" />
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-full mb-2" />
-            <Skeleton className="h-4 w-2/3" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">加载中...</div>
       </div>
     );
   }
 
   if (!question) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          <p>错题记录不存在</p>
-          <Button variant="link" onClick={() => router.push('/wrong-questions')}>
-            返回错题本
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        错题不存在
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* 头部导航 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+      {/* 返回按钮 */}
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center text-blue-600 hover:text-blue-800"
+      >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        返回
+      </button>
+
+      {/* 错题详情 */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">错题详情</h1>
-            <p className="text-muted-foreground">
-              {subjectLabels[question.knowledgePoint.subject]} · {question.knowledgePoint.name}
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">错题详情</h1>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span>学生：{question.student.name}</span>
+              <span>科目：{subjectLabels[question.knowledgePoint.subject]}</span>
+              <span>
+                知识点：{question.knowledgePoint.name} ({question.knowledgePoint.code})
+              </span>
+            </div>
+          </div>
+          <MasteryStatusBadge status={question.masteryStatus || 'NEW'} />
+        </div>
+
+        {/* 题目内容 */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">题目内容</h2>
+          <div className="bg-gray-50 rounded-lg p-4 text-gray-900">
+            {question.questionContent}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* 学生答案和正确答案 */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">学生答案</h3>
+            <div className="bg-gray-50 rounded-lg p-3 text-gray-900 min-h-[80px]">
+              {question.studentAnswer || '未填写'}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">正确答案</h3>
+            <div className="bg-green-50 rounded-lg p-3 text-green-900 min-h-[80px]">
+              {question.correctAnswer}
+            </div>
+          </div>
+        </div>
+
+        {/* 错误类型 */}
+        {question.errorType && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">错误类型</h3>
+            <div className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+              {question.errorType}
+            </div>
+          </div>
+        )}
+
+        {/* 备注 */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">备注</h3>
+          {editing ? (
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            />
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4 text-gray-900">
+              {notes || '暂无备注'}
+            </div>
+          )}
+        </div>
+
+        {/* 掌握状态 */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">掌握状态</h3>
+          {editing ? (
+            <select
+              value={masteryStatus}
+              onChange={(e) => setMasteryStatus(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="NEW">新题</option>
+              <option value="REVIEWING">复习中</option>
+              <option value="MASTERED">已掌握</option>
+            </select>
+          ) : (
+            <MasteryStatusBadge status={masteryStatus} />
+          )}
+        </div>
+
+        {/* 操作按钮 */}
+        <div className="flex gap-3">
           {editing ? (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setEditing(false);
-                  setMasteryStatus(question.masteryStatus || 'NEW');
-                  setNotes(question.notes || '');
-                }}
-              >
-                <X className="w-4 h-4 mr-2" />
-                取消
-              </Button>
-              <Button
-                size="sm"
+              <button
                 onClick={handleUpdate}
                 disabled={updating}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                <Save className="w-4 h-4 mr-2" />
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
                 {updating ? '保存中...' : '保存'}
-              </Button>
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setNotes(question.notes || '');
+                  setMasteryStatus(question.masteryStatus || 'NEW');
+                }}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                取消
+              </button>
             </>
           ) : (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                <Edit className="w-4 h-4 mr-2" />
-                编辑
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                删除
-              </Button>
-            </>
+            <button
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              编辑
+            </button>
           )}
         </div>
       </div>
-
-      {/* 题目内容 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>题目内容</CardTitle>
-            <MasteryStatusBadge status={question.masteryStatus || 'NEW'} />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="whitespace-pre-wrap">{question.questionContent}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h3 className="font-semibold text-red-800 mb-2">学生答案</h3>
-              <p className="text-sm text-red-700 whitespace-pre-wrap">
-                {question.studentAnswer || '未作答'}
-              </p>
-            </div>
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="font-semibold text-green-800 mb-2">正确答案</h3>
-              <p className="text-sm text-green-700 whitespace-pre-wrap">
-                {question.correctAnswer}
-              </p>
-            </div>
-          </div>
-
-          {question.errorType && (
-            <div>
-              <Label className="text-red-600">错误类型</Label>
-              <p className="text-sm mt-1">{question.errorType}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 知识点信息 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>知识点信息</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>知识点名称</Label>
-              <p className="text-sm mt-1">{question.knowledgePoint.name}</p>
-            </div>
-            <div>
-              <Label>知识点编码</Label>
-              <p className="text-sm mt-1 font-mono">{question.knowledgePoint.code}</p>
-            </div>
-            <div>
-              <Label>科目</Label>
-              <p className="text-sm mt-1">
-                {subjectLabels[question.knowledgePoint.subject]}
-              </p>
-            </div>
-            {question.knowledgePoint.parent && (
-              <div>
-                <Label>父知识点</Label>
-                <p className="text-sm mt-1">{question.knowledgePoint.parent.name}</p>
-              </div>
-            )}
-          </div>
-          {question.knowledgePoint.description && (
-            <div>
-              <Label>描述</Label>
-              <p className="text-sm mt-1">{question.knowledgePoint.description}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 学生信息 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>学生信息</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>姓名</Label>
-              <p className="text-sm mt-1">{question.student.name}</p>
-            </div>
-            <div>
-              <Label>电话</Label>
-              <p className="text-sm mt-1">{question.student.phone}</p>
-            </div>
-            <div>
-              <Label>邮箱</Label>
-              <p className="text-sm mt-1">{question.student.email}</p>
-            </div>
-            <div>
-              <Label>创建时间</Label>
-              <p className="text-sm mt-1">
-                {new Date(question.createdAt).toLocaleString('zh-CN')}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 编辑区域 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>更新掌握状态</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>掌握状态</Label>
-              <Select
-                value={masteryStatus}
-                onValueChange={(value) => setMasteryStatus(value as any)}
-                disabled={!editing}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NEW">新题</SelectItem>
-                  <SelectItem value="REVIEWING">复习中</SelectItem>
-                  <SelectItem value="MASTERED">已掌握</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label>备注笔记</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="添加复习笔记或备注..."
-              className="mt-1 min-h-[100px]"
-              disabled={!editing}
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
