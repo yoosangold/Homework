@@ -1,74 +1,208 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import AssignmentUpload from '@/components/assignments/AssignmentUpload'
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
-interface Student {
-  id: string
-  name: string
-}
+export default function AssignmentUploadPage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
 
-export default function UploadAssignmentPage() {
-  const [students, setStudents] = useState<Student[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    loadStudents()
-  }, [])
-
-  const loadStudents = async () => {
-    try {
-      const response = await fetch('/api/students')
-      const result = await response.json()
-      if (result.success) {
-        setStudents(result.data)
-      }
-    } catch (err) {
-      console.error('加载学生列表失败:', err)
-    } finally {
-      setIsLoading(false)
+  // 处理文件选择
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('请上传图片文件（JPG/PNG）');
+      return;
     }
-  }
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    setError('');
+  };
+
+  // 拖拽事件处理
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // 上传作业
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setError('请选择作业图片');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      // 将图片转换为 Base64
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedFile);
+      
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
+        
+        // TODO: 调用 API 上传作业
+        // 这里需要实现自动识别科目的逻辑
+        const response = await fetch('/api/assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: selectedFile.name,
+            images: [base64Image],
+            // 科目由系统自动识别
+          }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('作业上传成功！');
+          router.push('/dashboard/assignments');
+        } else {
+          setError(result.error || '上传失败');
+        }
+      };
+    } catch (err) {
+      setError('上传失败，请稍后重试');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* 页面头部 */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-          <Link href="/assignments" className="hover:text-blue-600">
-            作业管理
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900">上传作业</span>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">上传作业</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          选择学生、科目，上传作业图片
-        </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">上传作业</h1>
+        <p className="text-gray-600 mt-1">拖拽作业图片到下方区域即可自动上传</p>
       </div>
 
-      {/* 上传表单 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">加载学生列表...</p>
+      {/* 拖拽上传区域 */}
+      <div
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`
+          relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition
+          ${dragActive 
+            ? 'border-blue-500 bg-blue-50' 
+            : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+          }
+        `}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          className="hidden"
+        />
+
+        {preview ? (
+          <div className="space-y-4">
+            <img
+              src={preview}
+              alt="预览"
+              className="max-h-64 mx-auto rounded-lg shadow-md"
+            />
+            <p className="text-sm text-gray-600">{selectedFile?.name}</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedFile(null);
+                setPreview(null);
+              }}
+              className="text-sm text-red-600 hover:text-red-700"
+            >
+              删除
+            </button>
           </div>
         ) : (
-          <AssignmentUpload students={students} />
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <svg
+                className="w-16 h-16 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-lg font-medium text-gray-900">
+                拖拽作业图片到此处
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                或者点击选择文件
+              </p>
+            </div>
+            <p className="text-xs text-gray-400">
+              支持 JPG、PNG 格式，系统会自动识别科目
+            </p>
+          </div>
         )}
       </div>
 
-      {/* 帮助提示 */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-900 mb-2">💡 提示</h3>
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* 上传按钮 */}
+      {selectedFile && (
+        <button
+          onClick={handleUpload}
+          disabled={uploading}
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium"
+        >
+          {uploading ? '上传中...' : '确认上传'}
+        </button>
+      )}
+
+      {/* 说明 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="text-sm font-medium text-blue-900 mb-2">💡 使用说明</h3>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• 支持上传多张图片，可以拍摄作业的每一页</li>
-          <li>• 如果学生不在列表中，可以直接输入学生姓名</li>
-          <li>• 上传后可以在作业列表页面进行批改</li>
+          <li>• 支持拖拽上传，也可以点击选择文件</li>
+          <li>• 系统会自动识别作业科目（语文/数学/英语）</li>
+          <li>• 上传后会自动分析错题知识点</li>
+          <li>• 可以导出同类型错题进行强化练习</li>
         </ul>
       </div>
     </div>
-  )
+  );
 }
