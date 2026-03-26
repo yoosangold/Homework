@@ -60,6 +60,35 @@ export default function AssignmentUploadPage() {
     }
   };
 
+  // 计算图片哈希（简化版，用于重复检测）
+  const calculateImageHash = (base64Image: string): string => {
+    // 简单的哈希计算：对 base64 字符串进行哈希
+    let hash = 0;
+    const str = base64Image.substring(0, 1000); // 只取前 1000 个字符计算哈希
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+  };
+
+  // 检查是否已存在相同作业
+  const checkDuplicateAssignment = async (imageHash: string, studentId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/assignments/check-duplicate?studentId=${studentId}&imageHash=${imageHash}`);
+      const data = await response.json();
+      
+      if (response.ok && data.exists) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('检查重复作业失败:', error);
+      return false;
+    }
+  };
+
   // 上传作业
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -84,7 +113,17 @@ export default function AssignmentUploadPage() {
       reader.onloadend = async () => {
         const base64Image = reader.result as string;
         
-        // TODO: 调用 API 上传作业
+        // 计算图片哈希，检查是否重复
+        const imageHash = calculateImageHash(base64Image);
+        const isDuplicate = await checkDuplicateAssignment(imageHash, selectedStudent.id);
+        
+        if (isDuplicate) {
+          setUploading(false);
+          setError('⚠️ 该作业图片已上传过，无需重复提交！系统会自动登记为同一次作业。');
+          return;
+        }
+        
+        // 调用 API 上传作业
         const response = await fetch('/api/assignments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -93,6 +132,7 @@ export default function AssignmentUploadPage() {
             studentId: selectedStudent.id,
             studentName: selectedStudent.name,
             images: [base64Image],
+            imageHash, // 传递图片哈希用于重复检测
             // 科目由系统自动识别
           }),
         });
@@ -100,7 +140,26 @@ export default function AssignmentUploadPage() {
         const result = await response.json();
 
         if (response.ok) {
-          alert('作业上传成功！');
+          // 作业上传成功，自动触发 AI 批改
+          const assignmentId = result.data.id;
+          
+          try {
+            const correctResponse = await fetch(`/api/assignments/${assignmentId}/auto-correct`, {
+              method: 'POST',
+              credentials: 'include',
+            });
+            const correctResult = await correctResponse.json();
+            
+            if (correctResponse.ok) {
+              alert(`✅ 作业上传并批改完成！\n得分：${correctResult.data.correction.score}分\n错题数：${correctResult.data.wrongQuestionCount}道\n\n${correctResult.data.correction.feedback}`);
+            } else {
+              alert('作业上传成功，但自动批改失败，请稍后手动批改。');
+            }
+          } catch (error) {
+            console.error('自动批改失败:', error);
+            alert('作业上传成功，但自动批改失败，请稍后手动批改。');
+          }
+          
           // 清除选中的学生
           sessionStorage.removeItem('selectedStudent');
           router.push('/dashboard/assignments');

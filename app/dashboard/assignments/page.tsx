@@ -13,9 +13,11 @@ interface Assignment {
   id: string;
   title: string;
   studentName: string;
+  studentId: string;
   subject: string;
   status: string;
   createdAt: string;
+  wrongQuestionCount?: number;
 }
 
 const subjectLabels: Record<string, string> = {
@@ -27,7 +29,6 @@ const subjectLabels: Record<string, string> = {
 export default function AssignmentsPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +44,6 @@ export default function AssignmentsPage() {
       const data = await response.json();
       
       if (response.ok && data.classes) {
-        // 从所有班级中提取学生
         const allStudents: Student[] = [];
         data.classes.forEach((cls: any) => {
           if (cls.students) {
@@ -68,24 +68,102 @@ export default function AssignmentsPage() {
   // 获取作业列表
   const fetchAssignments = async () => {
     try {
-      const response = await fetch('/api/assignments');
+      const response = await fetch('/api/assignments', {
+        credentials: 'include',
+      });
       const data = await response.json();
       
-      if (response.ok && data.assignments) {
-        setAssignments(data.assignments);
+      if (response.ok && data.data) {
+        // 为每个作业获取错题数量
+        const assignmentsWithCount = await Promise.all(
+          data.data.map(async (assignment: any) => {
+            try {
+              const wrongQuestionsRes = await fetch(
+                `/api/wrong-questions?studentId=${assignment.studentId}&assignmentId=${assignment.id}`
+              );
+              const wrongQuestionsData = await wrongQuestionsRes.json();
+              return {
+                ...assignment,
+                wrongQuestionCount: wrongQuestionsData.data?.length || 0,
+              };
+            } catch {
+              return { ...assignment, wrongQuestionCount: 0 };
+            }
+          })
+        );
+        setAssignments(assignmentsWithCount);
+      } else if (data.error) {
+        console.error('获取作业失败:', data.error);
       }
     } catch (error) {
       console.error('获取作业列表失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleQuickUpload = (studentId: string, studentName: string) => {
-    // 将学生信息传递到上传页面
     sessionStorage.setItem('selectedStudent', JSON.stringify({
       id: studentId,
       name: studentName,
     }));
     router.push('/dashboard/assignments/upload');
+  };
+
+  const handleViewAssignment = (assignmentId: string) => {
+    router.push(`/dashboard/assignments/${assignmentId}`);
+  };
+
+  const handlePreviewWrongQuestions = (studentId: string, studentName: string, assignmentId: string) => {
+    router.push(`/dashboard/wrong-questions/preview?studentId=${studentId}&studentName=${studentName}&assignmentId=${assignmentId}`);
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string, assignmentTitle: string) => {
+    if (!confirm(`确定要删除作业"${assignmentTitle}"吗？删除后不可恢复！`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert('作业已删除');
+        fetchAssignments();
+      } else {
+        alert(data.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除作业失败:', error);
+      alert('删除失败，请稍后重试');
+    }
+  };
+
+  const handleAutoCorrect = async (assignmentId: string) => {
+    if (!confirm('确定要启动 AI 自动批改吗？系统将智能分析作业并识别错题。')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assignments/${assignmentId}/auto-correct`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`✅ 自动批改完成！\n得分：${data.data.correction.score}分\n错题数：${data.data.wrongQuestionCount}道\n\n${data.data.correction.feedback}`);
+        fetchAssignments();
+      } else {
+        alert(data.error || '批改失败');
+      }
+    } catch (error) {
+      console.error('自动批改失败:', error);
+      alert('批改失败，请稍后重试');
+    }
   };
 
   return (
@@ -167,6 +245,9 @@ export default function AssignmentsPage() {
                   科目
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  错题数
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   上传时间
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -180,7 +261,7 @@ export default function AssignmentsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {assignments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     暂无作业记录
                   </td>
                 </tr>
@@ -198,20 +279,68 @@ export default function AssignmentsPage() {
                         {subjectLabels[assignment.subject] || assignment.subject}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      {assignment.wrongQuestionCount !== undefined ? (
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          assignment.wrongQuestionCount > 0
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {assignment.wrongQuestionCount > 0 
+                            ? `${assignment.wrongQuestionCount} 道错题`
+                            : '全对'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {new Date(assignment.createdAt).toLocaleDateString('zh-CN')}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                        已完成
-                      </span>
+                      {assignment.status === 'CORRECTED' ? (
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                          已批改
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
+                          待批改
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right text-sm">
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        查看
-                      </button>
-                      <button className="text-green-600 hover:text-green-900">
-                        导出错题
+                      {assignment.status === 'PENDING' ? (
+                        <button 
+                          onClick={() => handleAutoCorrect(assignment.id)}
+                          className="text-purple-600 hover:text-purple-900 mr-3 font-medium"
+                          title="AI 自动批改"
+                        >
+                          🤖 批改
+                        </button>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => handlePreviewWrongQuestions(assignment.studentId, assignment.studentName, assignment.id)}
+                            className="text-green-600 hover:text-green-900 mr-3"
+                            title="查看错题"
+                          >
+                            错题
+                          </button>
+                          <button 
+                            onClick={() => handleViewAssignment(assignment.id)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                            title="查看详情"
+                          >
+                            详情
+                          </button>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => handleDeleteAssignment(assignment.id, assignment.title)}
+                        className="text-red-600 hover:text-red-900"
+                        title="删除作业"
+                      >
+                        删除
                       </button>
                     </td>
                   </tr>

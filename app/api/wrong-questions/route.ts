@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get('studentId');
+    const assignmentId = searchParams.get('assignmentId');
     const subject = searchParams.get('subject');
     const knowledgePointId = searchParams.get('knowledgePointId');
     const masteryStatus = searchParams.get('masteryStatus');
@@ -38,6 +39,10 @@ export async function GET(request: NextRequest) {
 
     if (studentId) {
       where.studentId = studentId;
+    }
+
+    if (assignmentId) {
+      where.assignmentId = assignmentId;
     }
 
     if (knowledgePointId) {

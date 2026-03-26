@@ -84,6 +84,7 @@ model Assignment {
   classId     String?
   dueDate     DateTime
   images      String?
+  imageHash   String?      // 图片哈希，用于重复检测
   studentName String?
   studentId   String?
   instruction String?
@@ -97,6 +98,7 @@ model Assignment {
   @@index([subject])
   @@index([dueDate])
   @@index([status])
+  @@index([studentId, imageHash])
 }
 
 /// 批改记录表
@@ -147,6 +149,7 @@ model WrongQuestion {
   id               String         @id @default(cuid())
   studentId        String
   knowledgePointId String
+  assignmentId     String?        // 关联的作业 ID
   questionContent  String
   studentAnswer    String?
   correctAnswer    String
@@ -160,6 +163,7 @@ model WrongQuestion {
 
   @@index([studentId])
   @@index([knowledgePointId])
+  @@index([assignmentId])
 }
 
 /// 复习计划表（基于艾宾浩斯记忆曲线）

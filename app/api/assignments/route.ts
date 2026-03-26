@@ -9,11 +9,12 @@ import { z } from 'zod'
 const createAssignmentSchema = z.object({
   title: z.string().min(1, '标题不能为空'),
   description: z.string().optional(),
-  subject: z.enum(['MATH', 'CHINESE', 'ENGLISH']),
+  subject: z.enum(['MATH', 'CHINESE', 'ENGLISH']).optional().default('MATH'),
   studentName: z.string().min(1, '学生姓名不能为空'),
   studentId: z.string().optional(),
   instruction: z.string().optional(),
   images: z.array(z.string()).optional(),
+  imageHash: z.string().optional(),
 })
 
 // GET: 获取作业列表（支持按学生、状态筛选）
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { title, description, subject, studentName, studentId, instruction, images } = validation.data
+    const { title, description, subject, studentName, studentId, instruction, images, imageHash } = validation.data
 
     // 查找或创建学生用户（如果 studentId 不存在）
     let actualStudentId = studentId
@@ -142,6 +143,7 @@ export async function POST(request: NextRequest) {
         studentId: actualStudentId,
         instruction,
         images: images ? JSON.stringify(images) : null,
+        imageHash,
         status: 'PENDING',
         dueDate: new Date(),
       },
